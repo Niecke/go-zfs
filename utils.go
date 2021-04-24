@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/docker/go-units"
 )
 
 type command struct {
@@ -334,11 +335,11 @@ func (z *Zpool) parseLine(line []string) error {
 	case "health":
 		setString(&z.Health, val)
 	case "allocated":
-		err = setUint(&z.Allocated, val)
+		err = setUint(&z.Allocated, FromHumanSize(val))
 	case "size":
-		err = setUint(&z.Size, val)
+		err = setUint(&z.Size, FromHumanSize(val))
 	case "free":
-		err = setUint(&z.Free, val)
+		err = setUint(&z.Free, FromHumanSize(val))
 	case "fragmentation":
 		// Trim trailing "%" before parsing uint
 		i := strings.Index(val, "%")
