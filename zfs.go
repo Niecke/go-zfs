@@ -23,19 +23,55 @@ const (
 // The field definitions can be found in the ZFS manual:
 // http://www.freebsd.org/cgi/man.cgi?zfs(8).
 type Dataset struct {
-	Name          string
-	Origin        string
-	Used          uint64
-	Avail         uint64
-	Mountpoint    string
-	Compression   string
-	Type          string
-	Written       uint64
-	Volsize       uint64
-	Logicalused   uint64
-	Usedbydataset uint64
-	Quota         uint64
-	Referenced    uint64
+	Name                 string
+	Available            uint64
+	CompressRatio        float64
+	DeferDestroy         bool
+	Mounted              bool
+	Origin               string
+	Referenced           uint64
+	Type                 string
+	Used                 uint64
+	UsedByChildren       uint64
+	UsedByDataset        uint64
+	UsedByRefReservation uint64
+	UsedBysnapshots      uint64
+	UserRefs             uint64
+	Aclinherit           string
+	AclMode              string
+	Atime                bool
+	CanMount             string
+	CaseSensitivity      string
+	Checksum             string
+	Compression          string
+	Copies               string
+	Dedup                string
+	Devices              bool
+	Exec                 bool
+	Logbias              string
+	Mlslabel             string
+	Mountpoint           string
+	Nbmand               bool
+	Normalization        string
+	Primarycache         string
+	Quota                string
+	Readonly             bool
+	Recordsize           string
+	RefQuota             string
+	RefReservation       string
+	Reservation          string
+	SecondaryCache       string
+	Setuid               bool
+	Sharenfs             string
+	Sharesmb             string
+	Snapdir              string
+	UTF8only             bool
+	Version              string
+	VolBlockSize         string
+	VolSize              string
+	Vscan                bool
+	Xattr                bool
+	Zoned                bool
 }
 
 // InodeType is the type of inode as reported by Diff
@@ -146,7 +182,7 @@ func Volumes(filter string) ([]*Dataset, error) {
 // GetDataset retrieves a single ZFS dataset by name.  This dataset could be
 // any valid ZFS dataset type, such as a clone, filesystem, snapshot, or volume.
 func GetDataset(name string) (*Dataset, error) {
-	out, err := zfs("list", "-Hp", "-o", dsPropListOptions, name)
+	out, err := zfs("list", "-H", "-o", dsPropListOptions, name)
 	if err != nil {
 		return nil, err
 	}
@@ -411,7 +447,7 @@ func (d *Dataset) Children(depth uint64) ([]*Dataset, error) {
 	} else {
 		args = append(args, "-r")
 	}
-	args = append(args, "-t", "all", "-Hp", "-o", dsPropListOptions)
+	args = append(args, "-t", "all", "-H", "-o", dsPropListOptions)
 	args = append(args, d.Name)
 
 	out, err := zfs(args...)

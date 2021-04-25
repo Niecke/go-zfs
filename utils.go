@@ -7,12 +7,11 @@ import (
 	"io"
 	"os/exec"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/docker/go-units"
+	"github.com/google/uuid"
 )
 
 type command struct {
@@ -93,50 +92,129 @@ func setUint(field *uint64, value string) error {
 	return nil
 }
 
+func setStorageValue(field *uint64, value string) error {
+	var v int64
+	if value == "-" {
+		v = 0
+	} else {
+		var err error
+		v, err = units.FromHumanSize(value)
+		if err != nil {
+			return err
+		}
+	}
+	*field = uint64(v)
+	return nil
+}
+
+func setBool(field *bool, value string) error {
+	if value == "on" || value == "yes" {
+		*field = true
+	} else if value == "off" || value == "no" || value == "-" {
+		*field = false
+	} else {
+		return errors.New("Value neither on/yes nor off/no")
+	}
+	return nil
+}
+
 func (ds *Dataset) parseLine(line []string) error {
 	var err error
 
 	if len(line) != len(dsPropList) {
 		return errors.New("Output does not match what is expected on this platform")
 	}
-	setString(&ds.Name, line[0])
-	setString(&ds.Origin, line[1])
-
-	if err = setUint(&ds.Used, line[2]); err != nil {
+	setString(&ds.Name, line[indexOfDSProp("name")])
+	if err = setStorageValue(&ds.Available, line[indexOfDSProp("available")]); err != nil {
 		return err
 	}
-	if err = setUint(&ds.Avail, line[3]); err != nil {
+	if ds.CompressRatio, err = strconv.ParseFloat(line[indexOfDSProp("compressratio")][:len(line[indexOfDSProp("compressratio")])-1], 64); err != nil {
 		return err
 	}
-
-	setString(&ds.Mountpoint, line[4])
-	setString(&ds.Compression, line[5])
-	setString(&ds.Type, line[6])
-
-	if err = setUint(&ds.Volsize, line[7]); err != nil {
+	if err = setBool(&ds.DeferDestroy, line[indexOfDSProp("defer_destroy")]); err != nil {
 		return err
 	}
-	if err = setUint(&ds.Quota, line[8]); err != nil {
+	if err = setBool(&ds.Mounted, line[indexOfDSProp("mounted")]); err != nil {
 		return err
 	}
-	if err = setUint(&ds.Referenced, line[9]); err != nil {
+	setString(&ds.Origin, line[indexOfDSProp("origin")])
+	if err = setStorageValue(&ds.Referenced, line[indexOfDSProp("referenced")]); err != nil {
 		return err
 	}
-
-	if runtime.GOOS == "solaris" {
-		return nil
-	}
-
-	if err = setUint(&ds.Written, line[10]); err != nil {
+	setString(&ds.Type, line[indexOfDSProp("type")])
+	if err = setStorageValue(&ds.Used, line[indexOfDSProp("used")]); err != nil {
 		return err
 	}
-	if err = setUint(&ds.Logicalused, line[11]); err != nil {
+	if err = setStorageValue(&ds.UsedByChildren, line[indexOfDSProp("usedbychildren")]); err != nil {
 		return err
 	}
-	if err = setUint(&ds.Usedbydataset, line[12]); err != nil {
+	if err = setStorageValue(&ds.UsedByDataset, line[indexOfDSProp("usedbydataset")]); err != nil {
 		return err
 	}
-
+	if err = setStorageValue(&ds.UsedByRefReservation, line[indexOfDSProp("usedbyrefreservation")]); err != nil {
+		return err
+	}
+	if err = setStorageValue(&ds.UsedBysnapshots, line[indexOfDSProp("usedbysnapshots")]); err != nil {
+		return err
+	}
+	if err = setUint(&ds.UserRefs, line[indexOfDSProp("userrefs")]); err != nil {
+		return err
+	}
+	setString(&ds.Aclinherit, line[indexOfDSProp("aclinherit")])
+	setString(&ds.AclMode, line[indexOfDSProp("aclmode")])
+	if err = setBool(&ds.Atime, line[indexOfDSProp("atime")]); err != nil {
+		return err
+	}
+	setString(&ds.CanMount, line[indexOfDSProp("canmount")])
+	setString(&ds.CaseSensitivity, line[indexOfDSProp("casesensitivity")])
+	setString(&ds.Checksum, line[indexOfDSProp("checksum")])
+	setString(&ds.Compression, line[indexOfDSProp("compression")])
+	setString(&ds.Copies, line[indexOfDSProp("copies")])
+	setString(&ds.Dedup, line[indexOfDSProp("dedup")])
+	if err = setBool(&ds.Devices, line[indexOfDSProp("devices")]); err != nil {
+		return err
+	}
+	if err = setBool(&ds.Exec, line[indexOfDSProp("exec")]); err != nil {
+		return err
+	}
+	setString(&ds.Logbias, line[indexOfDSProp("logbias")])
+	setString(&ds.Mlslabel, line[indexOfDSProp("mlslabel")])
+	setString(&ds.Mountpoint, line[indexOfDSProp("mountpoint")])
+	if err = setBool(&ds.Nbmand, line[indexOfDSProp("nbmand")]); err != nil {
+		return err
+	}
+	setString(&ds.Normalization, line[indexOfDSProp("normalization")])
+	setString(&ds.Primarycache, line[indexOfDSProp("primarycache")])
+	setString(&ds.Quota, line[indexOfDSProp("quota")])
+	if err = setBool(&ds.Readonly, line[indexOfDSProp("readonly")]); err != nil {
+		return err
+	}
+	setString(&ds.Recordsize, line[indexOfDSProp("recordsize")])
+	setString(&ds.RefQuota, line[indexOfDSProp("refquota")])
+	setString(&ds.RefReservation, line[indexOfDSProp("refreservation")])
+	setString(&ds.Reservation, line[indexOfDSProp("reservation")])
+	setString(&ds.SecondaryCache, line[indexOfDSProp("secondarycache")])
+	if err = setBool(&ds.Setuid, line[indexOfDSProp("setuid")]); err != nil {
+		return err
+	}
+	setString(&ds.Sharenfs, line[indexOfDSProp("sharenfs")])
+	setString(&ds.Sharesmb, line[indexOfDSProp("sharesmb")])
+	setString(&ds.Snapdir, line[indexOfDSProp("snapdir")])
+	if err = setBool(&ds.UTF8only, line[indexOfDSProp("utf8only")]); err != nil {
+		return err
+	}
+	setString(&ds.Version, line[indexOfDSProp("version")])
+	setString(&ds.VolBlockSize, line[indexOfDSProp("volblocksize")])
+	setString(&ds.VolSize, line[indexOfDSProp("volsize")])
+	if err = setBool(&ds.Vscan, line[indexOfDSProp("vscan")]); err != nil {
+		return err
+	}
+	if err = setBool(&ds.Xattr, line[indexOfDSProp("xattr")]); err != nil {
+		return err
+	}
+	if err = setBool(&ds.Zoned, line[indexOfDSProp("zoned")]); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -286,7 +364,7 @@ func parseInodeChanges(lines [][]string) ([]*InodeChange, error) {
 }
 
 func listByType(t, filter string) ([]*Dataset, error) {
-	args := []string{"list", "-rHp", "-t", t, "-o", dsPropListOptions}
+	args := []string{"list", "-rH", "-t", t, "-o", dsPropListOptions}
 
 	if filter != "" {
 		args = append(args, filter)
@@ -335,27 +413,40 @@ func (z *Zpool) parseLine(line []string) error {
 	case "health":
 		setString(&z.Health, val)
 	case "allocated":
-		err = setUint(&z.Allocated, FromHumanSize(val))
+		err = setStorageValue(&z.Allocated, val)
 	case "size":
-		err = setUint(&z.Size, FromHumanSize(val))
+		err = setStorageValue(&z.Size, val)
 	case "free":
-		err = setUint(&z.Free, FromHumanSize(val))
-	case "fragmentation":
-		// Trim trailing "%" before parsing uint
-		i := strings.Index(val, "%")
-		if i < 0 {
-			i = len(val)
-		}
-		err = setUint(&z.Fragmentation, val[:i])
-	case "readonly":
-		z.ReadOnly = val == "on"
-	case "freeing":
-		err = setUint(&z.Freeing, val)
-	case "leaked":
-		err = setUint(&z.Leaked, val)
+		err = setStorageValue(&z.Free, val)
 	case "dedupratio":
 		// Trim trailing "x" before parsing float64
 		z.DedupRatio, err = strconv.ParseFloat(val[:len(val)-1], 64)
+	case "capacity":
+		err = setUint(&z.Capacity, val[:len(val)-1])
+	case "altroot":
+		setString(&z.Altroot, val)
+	case "guid":
+		setString(&z.Guid, val)
+	case "version":
+		err = setUint(&z.Version, val)
+	case "bootfs":
+		setString(&z.BootFS, val)
+	case "delegation":
+		err = setBool(&z.Delegation, val)
+	case "autoreplace":
+		err = setBool(&z.Autoreplace, val)
+	case "cachefile":
+		setString(&z.Cachefile, val)
+	case "failmode":
+		setString(&z.Failmode, val)
+	case "listsnapshots":
+		err = setBool(&z.ListSnapshots, val)
+	case "autoexpand":
+		err = setBool(&z.Autoexpand, val)
+	case "dedupditto":
+		setString(&z.Dedupditto, val)
+	case "ashift":
+		setString(&z.Ashift, val)
 	}
 	return err
 }
