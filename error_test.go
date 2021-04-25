@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+
+	zfs "github.com/Niecke/go-zfs"
 )
 
 func TestError(t *testing.T) {
@@ -22,7 +24,7 @@ func TestError(t *testing.T) {
 
 	for _, test := range tests {
 		// Generate error from tests
-		zErr := Error{
+		zErr := zfs.Error{
 			Err:    test.err,
 			Debug:  test.debug,
 			Stderr: test.stderr,
