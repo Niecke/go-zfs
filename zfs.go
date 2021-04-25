@@ -436,10 +436,26 @@ func (d *Dataset) Rollback(destroyMoreRecent bool) error {
 	return err
 }
 
+func (d *Dataset) GetSnapshots(depth uint64) ([]*Dataset, error) {
+	return d.ChildrenFilter(depth, "snapshot")
+}
+
+func (d *Dataset) GetVolumes(depth uint64) ([]*Dataset, error) {
+	return d.ChildrenFilter(depth, "volume")
+}
+
+func (d *Dataset) GetFilesystems(depth uint64) ([]*Dataset, error) {
+	return d.ChildrenFilter(depth, "filesystem")
+}
+
+func (d *Dataset) Children(depth uint64) ([]*Dataset, error) {
+	return d.ChildrenFilter(depth, "all")
+}
+
 // Children returns a slice of children of the receiving ZFS dataset.
 // A recursion depth may be specified, or a depth of 0 allows unlimited
 // recursion.
-func (d *Dataset) Children(depth uint64) ([]*Dataset, error) {
+func (d *Dataset) ChildrenFilter(depth uint64, dstype string) ([]*Dataset, error) {
 	args := []string{"list"}
 	if depth > 0 {
 		args = append(args, "-d")
@@ -447,7 +463,7 @@ func (d *Dataset) Children(depth uint64) ([]*Dataset, error) {
 	} else {
 		args = append(args, "-r")
 	}
-	args = append(args, "-t", "all", "-H", "-o", dsPropListOptions)
+	args = append(args, "-t", dstype, "-H", "-o", dsPropListOptions)
 	args = append(args, d.Name)
 
 	out, err := zfs(args...)
