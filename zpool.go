@@ -86,8 +86,13 @@ func CreateZpool(name string, properties map[string]string, args ...string) (*Zp
 }
 
 // Destroy destroys a ZFS zpool by name.
-func (z *Zpool) Destroy() error {
-	_, err := zpool("destroy", z.Name)
+func (z *Zpool) Destroy(force bool) error {
+	var err error
+	if force {
+		_, err = zpool("destroy", "-f", z.Name)
+	} else {
+		_, err = zpool("destroy", z.Name)
+	}
 	return err
 }
 
