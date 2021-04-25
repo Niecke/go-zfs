@@ -20,11 +20,20 @@ type Zpool struct {
 	Allocated     uint64
 	Size          uint64
 	Free          uint64
-	Fragmentation uint64
-	ReadOnly      bool
-	Freeing       uint64
-	Leaked        uint64
 	DedupRatio    float64
+	Capacity      uint64
+	Altroot       string
+	Guid          string
+	Version       uint64
+	BootFS        string
+	Delegation    bool
+	Autoreplace   bool
+	Cachefile     string
+	Failmode      string
+	ListSnapshots bool
+	Autoexpand    bool
+	Dedupditto    string
+	Ashift        string
 }
 
 // zpool is a helper function to wrap typical calls to zpool.
