@@ -484,7 +484,13 @@ func (d *Dataset) ChildrenFilter(depth uint64, dstype string) ([]*Dataset, error
 			return nil, err
 		}
 	}
-	return datasets[1:], nil
+	// when getting all children drop the first since it is the partent itself
+	if dstype == "all" {
+		return datasets[1:], nil
+	} else {
+		return datasets, nil
+	}
+	
 }
 
 // Diff returns changes between a snapshot and the given ZFS dataset.
